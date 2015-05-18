@@ -57,7 +57,15 @@ module.exports = function(grunt) {
                         template: './views/index.html' 
                     })  
                 ]
-            } 
+            },
+            
+            tests: {
+                entry: './integration_tests/integrationTests.js',
+                output: {
+                    path: path.join(__dirname, 'integration_tests'),
+                    filename: 'specs.js',
+                }
+            }
         },
 
         sass: {
@@ -75,6 +83,28 @@ module.exports = function(grunt) {
             bundles: ['build/js/**/*', '!build/js/bundle.<%= bundle_hash.hash %>.js', '!build/js/*.bundle.<%= bundle_hash.hash %>.js', 'build/css/**/*', 'temp_scss.scss', '!build/css/style.<%= bundle_hash.hash %>.css']
         },
 
+        jasmine: {
+            src: [],
+            options: {
+                outfile: 'integration_tests/_SpecRunner.html',
+                specs: 'integration_tests/specs.js',
+                '--web-security': false
+            }
+        },
+
+        jshint: {
+            all: [
+                "Grunfile.js",
+                "public/**/*.js",
+                "integration_tests/**/*.js",
+                "!integration_tests/specs.js"
+            ],
+            options: {
+                node: true,
+                browser: true
+            }
+        },
+
         watch: {
             scripts: {
                 files: ['public/**/*', 'views/index.html'],
@@ -86,7 +116,8 @@ module.exports = function(grunt) {
 
     require('load-grunt-tasks')(grunt);
 
-    grunt.registerTask('default', ['concat', 'webpack', 'sass', 'clean']);
+    grunt.registerTask('default', ['concat', 'webpack:app', 'sass', 'clean']);
+    grunt.registerTask('test', ['jshint', 'webpack:tests', 'jasmine']);
     
     grunt.event.on('watch', function(action, filepath, target) {
         grunt.log.writeln(target + ': ' + filepath + ' has ' + action);

@@ -25,7 +25,7 @@ module.exports = (function() {
         startComponentThree: function() {
             var componentThreeView = new ComponentThreeView();
         }
-    }
+    };
     
 })();
 

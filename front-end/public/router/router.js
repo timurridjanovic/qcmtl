@@ -42,7 +42,7 @@ var router = (function() {
 
             Backbone.history.start();
         }
-    }
+    };
 })();
 
 module.exports = router;

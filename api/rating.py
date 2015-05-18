@@ -23,20 +23,27 @@ class RatingList(Handler):
         """
         Get list of all ratings per user_id
         """
-        logging.error("Get list of all ratings per user_id")
+        user = self.valid_user_id(user_id)
+        
+        ratings = RatingModel.get_ratings_by_user_id(user_id)
+        json_obj = self.query_to_json(ratings, 'ratings')
+        self.render_json(json_obj)
 
     def get_all_ratings(self, version):
         """
         Get list of all ratings
         """
-        logging.error("Get list of all ratings")
+        ratings = RatingModel.query()
+        json_obj = self.query_to_json(ratings, 'ratings')
+        self.render_json(json_obj)
 
 
     def post(self, version, user_id):
         """
         Creation of new rating for user_id
         """
-        logging.error("Creation of new rating for user_id")
+        ride_id = self.request.get('ride_id')
+        ride = self.valid_ride_id(ride_id, user_id)
 
 
 

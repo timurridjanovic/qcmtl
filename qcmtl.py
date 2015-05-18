@@ -127,9 +127,7 @@ class Handler(webapp2.RequestHandler):
         """
         if bool_string == 'true':
             return True
-        elif bool_string == 'false':
-            return False
-        return None
+        return False
 
     def json_to_date(self, date_string):
         """
