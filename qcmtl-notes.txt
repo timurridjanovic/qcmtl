@@ -1,0 +1,78 @@
+
+//creating users
+//
+
+$.post('/api/v1/users', {
+    email: 'ogi@gmail.com', 
+    password: '12345678', 
+    first_name: 'Ogi', 
+    last_name: 'Ridjanovic', 
+    phone_number: '418-658-5649', 
+    city: 'Quebec', 
+    sex: 'Male', 
+    country: 'Canada', 
+    province: 'Quebec', 
+    date_of_birth: new Date('07/02/88').getTime(), 
+    driver: true
+}).done(function(data) { 
+    console.log(data); 
+});
+
+
+$.post('/api/v1/users', {
+    email: 'ogi2@gmail.com', 
+    password: '12345678', 
+    first_name: 'Ogi2', 
+    last_name: 'Ridjanovic', 
+    phone_number: '418-658-5649', 
+    city: 'Quebec', 
+    sex: 'Male', 
+    country: 'Canada', 
+    province: 'Quebec', 
+    date_of_birth: new Date('07/03/88').getTime(), 
+}).done(function(data) { 
+    console.log(data); 
+});
+
+
+//creation of vehicle for user_id
+//
+
+$.post('/api/v1/users/6473924464345088/vehicles', {
+    license_number: 12345,
+    brand: 'Totoya',
+    color: 'black',
+    model: 'Corolla',
+    year: 1984
+}).done(function(data) { 
+    console.log(data); 
+});
+
+
+$.post('/api/v1/users/5348024557502464/vehicles', {
+    license_number: 12345,
+    brand: 'Merco',
+    color: 'black',
+    model: 'classic',
+    year: '1986'
+}).done(function(data) { 
+    console.log(data); 
+});
+
+
+//creation of ride (no restrictions on ride creation right now)
+//
+
+$.post('/api/v1/users/5348024557502464/rides', {
+    vehicle_id: '5207287069147136',
+    available_seats: 'bla',
+    luggage_options: 'big luggage allowed',
+    smoking_allowed: true,
+    datetime: new Date().getTime(),
+    destination_point: 'shell boul laurier',
+    destination_city: 'quebec',
+    departure_point: 'metro laurier',
+    departure_city: 'montreal'
+}).done(function(data) { 
+    console.log(data); 
+});
