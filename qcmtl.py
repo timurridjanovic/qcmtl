@@ -24,7 +24,10 @@ error_messages = {
     'vehicle_id_without_userid_error': 'we do not give specific vehicle info without a provided userid.',
     'ride_id_error': 'this ride id does not exist.',
     'ride_user_id_error': 'this ride id does not correspond with this user id.',
-    'update_type_error': 'the item you are trying to update is of the wrong type.'
+    'update_type_error': 'the item you are trying to update is of the wrong type.',
+    'token_error': 'your token is invalid',
+    'auth_error': 'your email or password is invalid',
+    'request_error': 'your request is probably malformed'
 }
 
 class Handler(webapp2.RequestHandler):
@@ -90,18 +93,25 @@ class Handler(webapp2.RequestHandler):
         utility method to transform entity query into dictionary that can then be transformed into json
         """
         result = []
-        for entry in query:
-            json_dict = {}
-            for k in entry._values.keys():
-                if k not in hidden_fields:
-                    value = getattr(entry, k)
-                    (new_key, new_value) = self._process_value_for_json(k, value) 
-                    json_dict[new_key] = new_value
-            json_dict['id'] = entry.key.id()
-            result.append(json_dict)
+        try:
+            for entry in query:
+                json_dict = self._entry_to_json(entry, hidden_fields)
+                result.append(json_dict)
+        except TypeError:
+            result = self._entry_to_json(query, hidden_fields)
         if key == None:
             return result
-        return {key: result}
+        return { key: result }
+
+    def _entry_to_json(self, entry, hidden_fields):
+        json_dict = {}
+        for k in entry._values.keys():
+            if k not in hidden_fields:
+                value = getattr(entry, k)
+                (new_key, new_value) = self._process_value_for_json(k, value) 
+                json_dict[new_key] = new_value
+        json_dict['id'] = entry.key.id()
+        return json_dict
 
     def _process_value_for_json(self, key, value):
         #value is key
@@ -246,6 +256,9 @@ class Index(Handler):
 
 application = webapp2.WSGIApplication([
     ('/', Index), #index html page
+    webapp2.Route('/api/<version>/login', handler='api.auth.Login'),
+    webapp2.Route('/api/<version>/logout', handler='api.auth.Logout'),
+
     webapp2.Route('/api/<version>/users<:(/?)>', handler='api.user.UserList'), #UserList
     webapp2.Route('/api/<version>/users/<user_id:(\w+)><:(/?)>', handler='api.user.User'), #User
 

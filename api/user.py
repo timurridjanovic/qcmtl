@@ -1,5 +1,3 @@
-
-
 #import main handler
 from qcmtl import Handler
 
@@ -8,11 +6,11 @@ from qcmtl import error_messages
 
 #import models
 from models.user_model import UserModel
+from models.token_model import TokenModel
 
 #import utilities
 import logging
 import re
-
 
 class UserList(Handler):
     def get(self, version):
@@ -30,26 +28,13 @@ class UserList(Handler):
         """
         email = self.request.get('email')
         password = self.request.get('password')
-        first_name = self.request.get('first_name') 
+        confirm_password = self.request.get('confirm_password')
+        first_name = self.request.get('first_name')
         last_name = self.request.get('last_name')
-        phone_number = self.request.get('phone_number')
-        city = self.request.get('city')
-        sex = self.request.get('sex')
-        country = self.request.get('country')
-        province = self.request.get('province')
-        date_of_birth = self.json_to_date(self.request.get('date_of_birth')) #date
-        student = self.json_to_bool(self.request.get('student')) #bool
-        student_picture = self.json_to_picture_uri(self.request.get('student_picture')) #picture
-        driver = self.json_to_bool(self.request.get('driver'))  #bool
-        drivers_license = self.request.get('drivers_license')
-        occupation = self.request.get('occupation')
-        education = self.request.get('education')
-        motto = self.request.get('motto')
-        profile_picture = self.request.get('profile_picture')
-        years_of_experience = self.json_to_int(self.request.get('years_of_experience')) #int
+        phone = self.request.get('phone')
+        terms_and_conditions = self.json_to_bool(self.request.get('terms_and_conditions'))
 
-        errors = self.validate_input(email=email, password=password, first_name=first_name, last_name=last_name, phone_number=phone_number,
-                city=city, sex=sex, country=country, province=province, date_of_birth=date_of_birth, drivers_license=drivers_license)
+        errors = self.validate_input(email=email, password=password, confirm_password=confirm_password, first_name=first_name, last_name=last_name, phone=phone, terms_and_conditions=terms_and_conditions)
 
         if errors.keys():
             self.throw_json_error({
@@ -58,32 +43,34 @@ class UserList(Handler):
             })
             return
 
-
         new_user = UserModel.create_user(email=email, password=password, first_name=first_name, last_name=last_name, 
-            phone_number=phone_number, city=city, sex=sex, province=province, country=country, date_of_birth=date_of_birth, 
-            credits=0, student=student, student_picture=None, student_expiration_date=None,
-            driver=driver, drivers_license=drivers_license, occupation=occupation, education=education, motto=motto, 
-            profile_picture=profile_picture, years_of_experience=years_of_experience)
+            phone=phone)
 
         key = new_user.put()
+        token = TokenModel.create_token(new_user.key)
+        token_key = token.put()
 
         self.render_json({
-            'url': '/api/' + self.api_version + '/users/' + str(key.id()),
-            'users': self.query_to_json([new_user], None)
+            'user': self.query_to_json(new_user, None),
+            'token': str(token_key.id())
         })
 
 
 
-    def validate_input(self, email, password, first_name, last_name, phone_number, city, sex, country, province, date_of_birth, drivers_license):
+    def validate_input(self, email, password, confirm_password, first_name, last_name, phone, terms_and_conditions):
         errors = {}
         if not self.unique_email(email):
-            errors['unique_email_error'] = 'the email you provided is already registered'
+            errors['email'] = 'Ce courriel existe deja.'
         if not self.valid_email(email): 
-            errors['email_error'] = 'the email address you provided is not valid'
+            errors['email'] = 'Votre courriel est invalide.'
+        if not self.valid_phone(phone):
+            errors['phone'] = 'Votre numero de telephone est invalide.'
         if not self.valid_password(password):
-            errors['password_error'] = 'the password you provided is not valid. It must be between 8 and 20 characters long.'
-        if not self.valid_date(date_of_birth):
-            errors['date_error'] = 'the date of birth you provided is not valid. you must provide a timestamp with the getTime() method on the js date object.'
+            errors['password'] = 'Votre mot de passe est invalide. Il doit etre entre 8 et 20 caracteres.'
+        if not self.valid_confirm_password(password, confirm_password):
+            errors['confirm_password'] = 'Vos mots de passe ne sont pas identiques.'
+        if not terms_and_conditions:
+            errors['terms_and_conditions'] = 'Vous devez approuver les termes et conditions du service.'
         return errors
 
        
@@ -96,15 +83,16 @@ class UserList(Handler):
         EMAIL_RE  = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
         return email and EMAIL_RE.match(email)
 
+    def valid_phone(self, phone):
+        PHONE_RE = re.compile(r'^[0-9]{10}$')
+        return phone and PHONE_RE.match(phone)
+
     def valid_password(self, password):
         PASS_RE = re.compile(r"^.{8,20}$")
         return password and PASS_RE.match(password)
-
-    def valid_date(self, date):
-        if date:
-            return True
-        return False
-
+    
+    def valid_confirm_password(self, password, confirm_password):
+        return password == confirm_password
 
 class User(UserList):
     def get(self, version, user_id):
@@ -126,7 +114,7 @@ class User(UserList):
         password = self.check_empty_string(self.request.get('password'))
         first_name = self.check_empty_string(self.request.get('first_name'))
         last_name = self.check_empty_string(self.request.get('last_name'))
-        phone_number = self.check_empty_string(self.request.get('phone_number'))
+        phone = self.check_empty_string(self.request.get('phone'))
         city = self.check_empty_string(self.request.get('city'))
         sex = self.check_empty_string(self.request.get('sex'))
         country = self.check_empty_string(self.request.get('country'))
@@ -143,7 +131,7 @@ class User(UserList):
         years_of_experience = self.check_empty_string(self.request.get('years_of_experience')) #int
 
         fields_to_update, errors = self.validate_put_input(user=user, email=email, password=password, first_name=first_name, last_name=last_name, 
-                phone_number=phone_number, city=city, sex=sex, country=country, province=province, date_of_birth=date_of_birth, student=student, 
+                phone=phone, city=city, sex=sex, country=country, province=province, date_of_birth=date_of_birth, student=student, 
                 student_picture=student_picture, driver=driver, drivers_license=drivers_license, occupation=occupation, education=education, motto=motto, 
                 profile_picture=profile_picture, years_of_experience=years_of_experience)
 
@@ -179,7 +167,7 @@ class User(UserList):
             "users": self.query_to_json([user], None)
         })
 
-    def validate_put_input(self, user, email, password, first_name, last_name, phone_number, city, sex, country, province, date_of_birth, student, 
+    def validate_put_input(self, user, email, password, first_name, last_name, phone, city, sex, country, province, date_of_birth, student, 
             student_picture, driver, drivers_license, occupation, education, motto, profile_picture, years_of_experience):
         """
         validate data for update on put
@@ -210,8 +198,8 @@ class User(UserList):
             fields_to_update['first_name'] = first_name
         if not last_name == None:
             fields_to_update['last_name'] = last_name
-        if not phone_number == None:
-            fields_to_update['phone_number'] = phone_number
+        if not phone == None:
+            fields_to_update['phone'] = phone
         if not city == None:
             fields_to_update['city'] = city
         if not sex == None:
