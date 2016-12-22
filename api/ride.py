@@ -42,25 +42,22 @@ class RideList(Handler):
         Creation of new ride for user_id
         """
         user = self.valid_user_id(user_id)
-        vehicle_id = self.request.get('vehicle_id')
-        vehicle = self.valid_vehicle_id(vehicle_id, user_id)
-
-        available_seats = self.json_to_int(self.request.get('available_seats')) #int
-        luggage_options = self.request.get('luggage_options')
-        smoking_allowed = self.json_to_bool(self.request.get('smoking_allowed')) #bool
-        animal_options = self.request.get('animal_options')
-        comments = self.request.get('comments')
+        
+        number_of_passengers = self.json_to_int(self.request.get('number_of_passengers')) #int
+        smoking_not_allowed = self.json_to_bool(self.request.get('smoking_not_allowed')) #bool
+        pets_not_allowed = self.json_to_bool(self.request.get('pets_not_allowed')) #bool
+        additional_details = self.request.get('additional_details')
+        car_description = self.request.get('car_description')
         datetime = self.json_to_date(self.request.get('datetime')) #date
         departure_point = self.request.get('departure_point')
         departure_city = self.request.get('departure_city')
         destination_point = self.request.get('destination_point')
         destination_city = self.request.get('destination_city')
-        num_of_reservations = self.json_to_int(self.request.get('num_of_reservations')) #int
-        passenger_ids = self.json_to_list(self.request.get('passenger_ids')) #list
 
-        errors = self.validate_input(available_seats=available_seats, luggage_options=luggage_options,
-                smoking_allowed=smoking_allowed, datetime=datetime, departure_point=departure_point, departure_city=departure_city,
-                destination_point=destination_point, destination_city=destination_city)
+        errors = self.validate_input(number_of_passengers=number_of_passengers, smoking_not_allowed=smoking_not_allowed, 
+                pets_not_allowed=pets_not_allowed, datetime=datetime, car_description=car_description, 
+                departure_point=departure_point, departure_city=departure_city, destination_point=destination_point, 
+                destination_city=destination_city)
 
         if errors.keys():
             self.throw_json_error({
@@ -69,27 +66,27 @@ class RideList(Handler):
             })
             return
 
-        new_ride = RideModel.create_ride(user_key=user.key, vehicle_key=vehicle.key, available_seats=available_seats, luggage_options=luggage_options,
-                smoking_allowed=smoking_allowed, animal_options=animal_options, comments=comments, datetime=datetime, departure_point=departure_point,
-                departure_city=departure_city, destination_point=destination_point, destination_city=destination_city)
-        
+        new_ride = RideModel.create_ride(user_key=user.key, number_of_passengers=number_of_passengers, smoking_not_allowed=smoking_not_allowed,
+                pets_not_allowed=pets_not_allowed, car_description=car_description, additional_details=additional_details,
+                datetime=datetime, departure_point=departure_point, departure_city=departure_city, destination_point=destination_point, 
+                destination_city=destination_city)
+
         key = new_ride.put()
 
         self.render_json({
-            'url': '/api/' + self.api_version + '/users/' + user_id + '/rides/' + str(key.id()),
-            'rides': self.query_to_json([new_ride], None)
+            'ride': self.query_to_json(new_ride, None)
         })
 
 
-    def validate_input(self, available_seats, luggage_options, smoking_allowed, datetime, departure_point, departure_city,
-            destination_point, destination_city):
+    def validate_input(self, number_of_passengers, smoking_not_allowed, pets_not_allowed, datetime, car_description,
+            departure_point, departure_city, destination_point, destination_city):
         errors = {}
-        if not available_seats:
-            errors['available_seats_error'] = "You haven't provided the number of available seats in the vehicle."
-        if not luggage_options:
-            errors['luggage_options_error'] = "You haven't provided luggage options."
-        if not smoking_allowed == True and not smoking_allowed == False: #bool
-            errors['smoking_allowed_error'] = "You haven't provided the smoking allowed boolean."
+        if not number_of_passengers:
+            errors['number_of_passengers_error'] = "You haven't provided the number of passengers in the vehicle."
+        if not smoking_not_allowed == True and not smoking_not_allowed == False: #bool
+            errors['smoking_not_allowed_error'] = "You haven't provided the smoking allowed boolean."
+        if not pets_not_allowed == True and not pets_not_allowed == False:
+            errors['pets_not_allowed_error'] = "You haven't provided the pets not allowed boolean."
         if not datetime:
             errors['datetime_error'] = "You have not provided a date and time for the ride."
         if not departure_point:
